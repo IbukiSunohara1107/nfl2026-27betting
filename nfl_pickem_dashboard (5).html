@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFL 2026 Pick'em</title>
+  <style>
+    :root {
+      --bg:     #04060E;
+      --surf:   #070A18;
+      --card:   #0A0D1E;
+      --row-bg: #060812;
+      --bdr:    rgba(255,255,255,.07);
+      --text:   #C4C8DC;
+      --dim:    rgba(255,255,255,.35);
+      --faint:  rgba(255,255,255,.05);
+      --navy:   #013369;
+      --red:    #D50A0A;
+      --c1: #FFB612;
+      --c2: #4D9FFF;
+      --c3: #00D68F;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                   'Helvetica Neue', Arial, sans-serif;
+      background:
+        radial-gradient(ellipse at 50% -5%, rgba(1,51,105,.35) 0%, transparent 55%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ──────────────────────────────────────────────
+       TOP BAR
+    ────────────────────────────────────────────── */
+    .topbar {
+      height: 78px;
+      background: linear-gradient(108deg, #010D22 0%, #013369 52%, #01122A 100%);
+      border-bottom: 3px solid var(--red);
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      gap: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    /* diagonal field-stripe texture */
+    .topbar::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        -52deg, transparent, transparent 26px,
+        rgba(255,255,255,.022) 26px, rgba(255,255,255,.022) 27px
+      );
+      pointer-events: none;
+    }
+    /* red glow on left corner */
+    .topbar::after {
+      content: '';
+      position: absolute; left: -50px; top: -30px;
+      width: 200px; height: 150px;
+      background: radial-gradient(ellipse, rgba(213,10,10,.28) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .tb-logo {
+      width: 60px; height: 60px; object-fit: contain; flex-shrink: 0;
+      position: relative; z-index: 1;
+      filter: drop-shadow(0 0 14px rgba(255,255,255,.22));
+    }
+    .tb-brand {
+      display: flex; flex-direction: column; gap: 5px;
+      position: relative; z-index: 1;
+    }
+    .tb-badge {
+      display: inline-flex; align-items: center;
+      background: var(--red); color: #fff;
+      font-size: 8px; font-weight: 800; letter-spacing: 2.5px;
+      text-transform: uppercase;
+      padding: 2px 8px; border-radius: 3px;
+      width: fit-content;
+    }
+    .tb-title {
+      font-size: 23px; font-weight: 900;
+      color: #fff; letter-spacing: -.4px;
+      text-transform: uppercase; line-height: 1;
+    }
+
+    .tb-sep {
+      width: 1px; height: 46px;
+      background: rgba(255,255,255,.18);
+      flex-shrink: 0; position: relative; z-index: 1;
+    }
+
+    .tb-week { display: flex; flex-direction: column; position: relative; z-index: 1; }
+    .tb-week-lbl {
+      font-size: 8px; font-weight: 700; letter-spacing: 2.5px;
+      color: rgba(255,255,255,.38); text-transform: uppercase;
+      margin-bottom: 1px;
+    }
+    .tb-week-val { font-size: 30px; font-weight: 900; color: #fff; line-height: 1; }
+
+    .tb-right {
+      margin-left: auto; display: flex; align-items: center; gap: 18px;
+      position: relative; z-index: 1;
+    }
+    .live-pill {
+      display: flex; align-items: center; gap: 7px;
+      background: rgba(34,197,94,.12);
+      border: 1px solid rgba(34,197,94,.25);
+      border-radius: 20px;
+      padding: 5px 12px;
+    }
+    .live-pip { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: blink 2.2s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 55%{opacity:.22} }
+    .live-txt { font-size: 9px; font-weight: 800; letter-spacing: 2px; color: #22c55e; text-transform: uppercase; }
+
+    .tb-info { font-size: 11px; color: rgba(255,255,255,.38); }
+
+    .btn-ref {
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 6px; color: rgba(255,255,255,.75);
+      padding: 8px 18px; font-size: 11px; font-weight: 700; letter-spacing: .4px;
+      cursor: pointer; transition: background .14s, color .14s;
+    }
+    .btn-ref:hover    { background: rgba(255,255,255,.2); color: #fff; }
+    .btn-ref:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* ──────────────────────────────────────────────
+       MAIN GRID
+    ────────────────────────────────────────────── */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 408px;
+      min-height: calc(100vh - 78px);
+    }
+
+    /* ════════════════════════════════════════════
+       LEFT PANEL
+    ════════════════════════════════════════════ */
+    .panel-l { border-right: 1px solid var(--bdr); display: flex; flex-direction: column; }
+
+    .panel-l-head {
+      height: 54px;
+      padding: 0 30px;
+      display: flex; align-items: center; gap: 14px;
+      background: linear-gradient(90deg, rgba(1,51,105,.3) 0%, transparent 60%);
+      border-bottom: 1px solid var(--bdr);
+    }
+    .panel-season-pill {
+      background: rgba(213,10,10,.14);
+      border: 1px solid rgba(213,10,10,.28);
+      border-radius: 4px;
+      color: #F87171;
+      font-size: 8px; font-weight: 800; letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 3px 9px;
+    }
+    .panel-h2 { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -.1px; }
+    .thru-lbl { font-size: 11px; color: var(--dim); margin-left: auto; letter-spacing: .2px; }
+
+    /* Three player columns */
+    .tcols { display: grid; grid-template-columns: repeat(3,1fr); flex: 1; }
+    .pcol  { display: flex; flex-direction: column; }
+    .pcol + .pcol { border-left: 1px solid var(--bdr); }
+
+    /* ── Player column header ── */
+    .pcol-hd {
+      padding: 18px 22px 16px;
+      border-bottom: 1px solid var(--bdr);
+      position: relative; overflow: hidden;
+    }
+    .pcol-glow {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    .pcol-hd-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; z-index: 1;
+    }
+    .pcol-hd-left { display: flex; align-items: center; gap: 11px; }
+
+    /* Medal rank badges */
+    .rk-badge {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 900; flex-shrink: 0;
+    }
+    .rk1 { background: linear-gradient(140deg, #FFD700 0%, #FFB300 100%); color: #000; box-shadow: 0 0 18px rgba(255,179,0,.6); }
+    .rk2 { background: linear-gradient(140deg, #C8C8C8 0%, #9B9B9B 100%); color: #111; }
+    .rk3 { background: linear-gradient(140deg, #CD7F32 0%, #9A5C1E 100%); color: #fff; }
+
+    .pcol-name { font-size: 17px; font-weight: 800; color: #fff; }
+
+    /* Right side: big win number */
+    .pcol-hd-right { text-align: right; }
+    .pcol-num {
+      font-size: 46px; font-weight: 900; line-height: 1;
+      letter-spacing: -3px;
+    }
+    .pcol-wins-lbl {
+      font-size: 8px; font-weight: 700; letter-spacing: 2px;
+      color: var(--dim); text-transform: uppercase;
+      text-align: right; margin-top: 2px;
+    }
+
+    /* ── Team row ── */
+    .trow {
+      display: grid;
+      grid-template-columns: 36px 1fr 38px;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 22px 9px 16px;
+      border-bottom: 1px solid var(--bdr);
+      border-left: 3px solid transparent;
+      background: var(--row-bg);
+      transition: background .12s;
+    }
+    .trow:last-child { border-bottom: none; }
+    .trow:hover { background: rgba(255,255,255,.026); }
+
+    .tlogo { width: 34px; height: 34px; object-fit: contain; }
+    .tlogo-fb {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+      font-size: 8px; font-weight: 700;
+    }
+    .tname {
+      font-size: 12.5px; font-weight: 500; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .twins {
+      font-size: 20px; font-weight: 900; text-align: right;
+      color: rgba(255,255,255,.14);
+    }
+    .twins.on { color: #fff; }
+
+    /* ════════════════════════════════════════════
+       RIGHT PANEL
+    ════════════════════════════════════════════ */
+    .panel-r { display: flex; flex-direction: column; }
+
+    .sect { padding: 24px 26px; border-bottom: 1px solid var(--bdr); }
+
+    /* Section title with red accent bar */
+    .sect-h3 {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 9px; font-weight: 800; letter-spacing: 2.5px;
+      color: rgba(255,255,255,.45); text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .sect-h3::before {
+      content: '';
+      display: block; width: 16px; height: 2px;
+      background: var(--red); border-radius: 1px; flex-shrink: 0;
+    }
+    .sect-attr { font-size: 10px; color: var(--dim); margin-bottom: 22px; }
+
+    /* Standings entries */
+    .sentry { margin-bottom: 20px; }
+    .sentry:last-child { margin-bottom: 0; }
+
+    .sentry-top { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; }
+    .sentry-rk {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; font-weight: 900; flex-shrink: 0;
+    }
+    .sentry-info { flex: 1; }
+    .sentry-name { font-size: 19px; font-weight: 800; color: #fff; }
+    .sentry-sub  { font-size: 11px; color: var(--dim); margin-top: 1px; }
+    .sentry-num  { font-size: 42px; font-weight: 900; line-height: 1; letter-spacing: -2px; }
+
+    .bar-track { height: 5px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 3px; transition: width .55s cubic-bezier(.4,0,.2,1); }
+
+    /* Chart section */
+    .chart-sect { flex: 1; padding: 24px 26px 20px; display: flex; flex-direction: column; }
+    .chart-sub { font-size: 10px; color: var(--dim); margin-top: 3px; margin-bottom: 16px; }
+    .chart-inner { flex: 1; min-height: 120px; }
+    svg.rc { display: block; width: 100%; }
+
+    /* ── Loading overlay ── */
+    .overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(4,6,14,.97);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+    }
+    .spin {
+      width: 42px; height: 42px;
+      border: 3px solid rgba(255,255,255,.07);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin-lbl { font-size: 13px; color: var(--dim); letter-spacing: .4px; }
+
+    .err-notice {
+      position: fixed; top: 78px; left: 0; right: 0; z-index: 100;
+      background: rgba(213,10,10,.1);
+      border-bottom: 1px solid rgba(213,10,10,.22);
+      padding: 9px 28px; font-size: 11px; color: #f87171;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .main { grid-template-columns: 1fr; }
+      .panel-r { border-top: 1px solid var(--bdr); }
+    }
+    @media (max-width: 640px) {
+      .tcols { grid-template-columns: 1fr; }
+      .pcol + .pcol { border-left: none; border-top: 1px solid var(--bdr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="overlay" id="overlay">
+  <div class="spin"></div>
+  <div class="spin-lbl">Loading NFL 2026 season data&hellip;</div>
+</div>
+
+<div class="err-notice" id="err-notice" style="display:none"></div>
+
+<!-- ── TOP BAR ── -->
+<div class="topbar">
+  <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png"
+       alt="NFL" class="tb-logo" onerror="this.style.display='none'">
+  <div class="tb-brand">
+    <span class="tb-badge">Pick&rsquo;em</span>
+    <span class="tb-title">2026&ndash;27 NFL Season</span>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-week">
+    <div class="tb-week-lbl">Week</div>
+    <div class="tb-week-val" id="tb-week-val">&mdash;</div>
+  </div>
+  <div class="tb-right">
+    <div class="live-pill">
+      <div class="live-pip"></div>
+      <span class="live-txt">Live</span>
+    </div>
+    <span class="tb-info" id="tb-info">Syncing ESPN data&hellip;</span>
+    <button class="btn-ref" id="btn-ref" onclick="doRefresh()">&#8635; Refresh</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── LEFT: Team Wins ── -->
+  <div class="panel-l">
+    <div class="panel-l-head">
+      <span class="panel-season-pill">2026 Season</span>
+      <span class="panel-h2">Team Wins</span>
+      <span class="thru-lbl" id="thru-lbl">Through Week &mdash;</span>
+    </div>
+    <div class="tcols" id="tcols"></div>
+  </div>
+
+  <!-- ── RIGHT: Standings + Chart ── -->
+  <div class="panel-r">
+    <div class="sect">
+      <div class="sect-h3">Leaderboard</div>
+      <div class="sect-attr" id="stand-attr">ESPN live data</div>
+      <div id="stand-list"></div>
+    </div>
+    <div class="chart-sect">
+      <div class="sect-h3">Rank By Week</div>
+      <div class="chart-sub">1st place at top &mdash; rank movement over the season</div>
+      <div class="chart-inner" id="chart-inner">
+        <svg class="rc" id="rc" height="160"></svg>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ================================================================
+   CONFIG
+================================================================ */
+const SEASON = 2026, ST = 2;
+
+const PLAYERS = [
+  {
+    id: 'sunohara', name: 'Sunohara', ja: '春原',
+    color: '#FFB612', glow: 'rgba(255,182,18,.14)',
+    teams: ['PHI','LAR','DET','CIN','NE','LAC','PIT','CAR','CLE','ATL']
+  },
+  {
+    id: 'miyatsu', name: 'Miyatsu', ja: '宮津',
+    color: '#4D9FFF', glow: 'rgba(77,159,255,.14)',
+    teams: ['BAL','KC','SF','HOU','TB','GB','MIN','WSH','NYJ','LV']
+  },
+  {
+    id: 'fujimoto', name: 'Fujimoto', ja: '藤本',
+    color: '#00D68F', glow: 'rgba(0,214,143,.14)',
+    teams: ['BUF','SEA','CHI','DEN','JAX','DAL','NYG','IND','NO','ARI']
+  }
+];
+
+const TEAM_NAMES = {
+  PHI: 'Philadelphia Eagles',   LAR: 'Los Angeles Rams',
+  DET: 'Detroit Lions',         CIN: 'Cincinnati Bengals',
+  NE:  'New England Patriots',  LAC: 'Los Angeles Chargers',
+  PIT: 'Pittsburgh Steelers',   CAR: 'Carolina Panthers',
+  CLE: 'Cleveland Browns',      ATL: 'Atlanta Falcons',
+  BAL: 'Baltimore Ravens',      KC:  'Kansas City Chiefs',
+  SF:  'San Francisco 49ers',   HOU: 'Houston Texans',
+  TB:  'Tampa Bay Buccaneers',  GB:  'Green Bay Packers',
+  MIN: 'Minnesota Vikings',     WSH: 'Washington Commanders',
+  NYJ: 'New York Jets',         LV:  'Las Vegas Raiders',
+  BUF: 'Buffalo Bills',         SEA: 'Seattle Seahawks',
+  CHI: 'Chicago Bears',         DEN: 'Denver Broncos',
+  JAX: 'Jacksonville Jaguars',  DAL: 'Dallas Cowboys',
+  NYG: 'New York Giants',       IND: 'Indianapolis Colts',
+  NO:  'New Orleans Saints',    ARI: 'Arizona Cardinals'
+};
+
+const REMAP = { WAS:'WSH', WFT:'WSH', LA:'LAR', LVR:'LV', OAK:'LV', JAC:'JAX' };
+const norm  = a => REMAP[a] || a;
+const T2P   = {};
+PLAYERS.forEach(p => p.teams.forEach(t => { T2P[t] = p; }));
+
+/* ================================================================
+   STATE
+================================================================ */
+let S = { week: null, wins: {}, logos: {}, weekly: [] };
+
+/* ================================================================
+   ESPN API
+================================================================ */
+const BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
+
+async function espnGet(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`ESPN ${r.status}`);
+  return r.json();
+}
+
+async function fetchBoard(week) {
+  let u = `${BASE}/scoreboard?seasontype=${ST}&season=${SEASON}`;
+  if (week) u += `&week=${week}`;
+  return espnGet(u);
+}
+
+function extractWinners(data) {
+  const out = [];
+  for (const ev of (data.events || [])) {
+    for (const co of (ev.competitions || [])) {
+      if (!(co.status?.type?.name || '').includes('FINAL')) continue;
+      const cs = co.competitors || [];
+      if (cs.length !== 2) continue;
+      cs.forEach(c => {
+        const a    = norm(c.team?.abbreviation || '');
+        const logo = c.team?.logo || c.team?.logos?.[0]?.href;
+        if (a && logo && !S.logos[a]) S.logos[a] = logo;
+      });
+      let winner = null;
+      const flagged = cs.find(c => c.winner === true);
+      if (flagged) {
+        winner = norm(flagged.team?.abbreviation || '');
+      } else {
+        const s0 = parseFloat(cs[0].score || 0);
+        const s1 = parseFloat(cs[1].score || 0);
+        if      (s0 > s1) winner = norm(cs[0].team?.abbreviation || '');
+        else if (s1 > s0) winner = norm(cs[1].team?.abbreviation || '');
+      }
+      if (winner) out.push(winner);
+    }
+  }
+  return out;
+}
+
+/* ================================================================
+   LOAD
+================================================================ */
+async function loadAll() {
+  S = { week: null, wins: {}, logos: {}, weekly: [] };
+  const cur = await fetchBoard(null);
+  S.week    = cur.week?.number || 1;
+
+  const jobs = [];
+  for (let w = 1; w <= S.week; w++) jobs.push(fetchBoard(w));
+  const settled = await Promise.allSettled(jobs);
+
+  const cum = { sunohara: 0, miyatsu: 0, fujimoto: 0 };
+  settled.forEach((res, idx) => {
+    if (res.status === 'fulfilled') {
+      extractWinners(res.value).forEach(abbr => {
+        const p = T2P[abbr];
+        if (p) { cum[p.id]++; S.wins[abbr] = (S.wins[abbr] || 0) + 1; }
+      });
+    }
+    S.weekly.push({ week: idx + 1, ...cum });
+  });
+}
+
+/* ================================================================
+   HELPERS
+================================================================ */
+function logoUrl(abbr) {
+  if (S.logos[abbr]) return S.logos[abbr];
+  const SLUG = {
+    LAR:'la', WSH:'wsh', LV:'lv', NE:'ne', SF:'sf',
+    KC:'kc',  TB:'tb',  GB:'gb', NO:'no', NYJ:'nyj',
+    NYG:'nyg', JAX:'jax', PHI:'phi', BAL:'bal', HOU:'hou'
+  };
+  return `https://a.espncdn.com/i/teamlogos/nfl/500/${SLUG[abbr] || abbr.toLowerCase()}.png`;
+}
+
+function sortedPlayers() {
+  return [...PLAYERS]
+    .map(p => ({ p, wins: p.teams.reduce((s, t) => s + (S.wins[t] || 0), 0) }))
+    .sort((a, b) => b.wins - a.wins || PLAYERS.indexOf(a.p) - PLAYERS.indexOf(b.p));
+}
+
+function weeklyRanks() {
+  return S.weekly.map(d => {
+    const sorted = [...PLAYERS]
+      .map(p => ({ p, wins: d[p.id] || 0 }))
+      .sort((a, b) => b.wins - a.wins || PLAYERS.indexOf(a.p) - PLAYERS.indexOf(b.p));
+    const ranks = { week: d.week };
+    sorted.forEach((e, i) => { ranks[e.p.id] = i + 1; });
+    return ranks;
+  });
+}
+
+function rkClass(rank) {
+  return rank === 1 ? 'rk1' : rank === 2 ? 'rk2' : 'rk3';
+}
+
+/* ================================================================
+   RENDER — Team columns (left)
+================================================================ */
+function renderTeams() {
+  document.getElementById('thru-lbl').textContent =
+    S.week ? `Through Week ${S.week}` : 'Preseason';
+  document.getElementById('tb-week-val').textContent = S.week || '—';
+
+  const ranked  = sortedPlayers();
+  const rankMap = {};
+  ranked.forEach((e, i) => { rankMap[e.p.id] = i + 1; });
+
+  document.getElementById('tcols').innerHTML = PLAYERS.map(player => {
+    const total = player.teams.reduce((s, t) => s + (S.wins[t] || 0), 0);
+    const rank  = rankMap[player.id];
+    const rc    = rkClass(rank);
+
+    const rows = player.teams.map(abbr => {
+      const w    = S.wins[abbr] || 0;
+      const logo = logoUrl(abbr);
+      const name = TEAM_NAMES[abbr] || abbr;
+      const bColor = w > 0 ? player.color : 'transparent';
+      return `
+      <div class="trow" style="border-left-color:${bColor}">
+        <img src="${logo}" alt="${abbr}" class="tlogo"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="tlogo-fb" style="background:${player.glow};color:${player.color}">${abbr}</div>
+        <div class="tname">${name}</div>
+        <div class="twins${w > 0 ? ' on' : ''}">${w}</div>
+      </div>`;
+    }).join('');
+
+    return `
+    <div class="pcol">
+      <div class="pcol-hd">
+        <div class="pcol-glow" style="background:radial-gradient(ellipse at 80% 120%,${player.color}1F 0%,transparent 70%)"></div>
+        <div class="pcol-hd-inner">
+          <div class="pcol-hd-left">
+            <div class="rk-badge ${rc}">${rank}</div>
+            <div class="pcol-name">${player.ja}</div>
+          </div>
+          <div class="pcol-hd-right">
+            <div class="pcol-num" style="color:${player.color}">${total}</div>
+            <div class="pcol-wins-lbl">Wins</div>
+          </div>
+        </div>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+/* ================================================================
+   RENDER — Standings (right)
+================================================================ */
+function renderStandings() {
+  const ranked = sortedPlayers();
+  const maxW   = ranked[0]?.wins || 1;
+  const now    = new Date();
+  document.getElementById('stand-attr').textContent =
+    `ESPN · ${now.toLocaleDateString('en-US',{
+      month: 'short', day: 'numeric', year: 'numeric'
+    })} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+
+  document.getElementById('stand-list').innerHTML = ranked.map(({ p, wins }, i) => {
+    const pct = Math.round((wins / maxW) * 100);
+    const rc  = rkClass(i + 1);
+    return `
+    <div class="sentry">
+      <div class="sentry-top">
+        <div class="sentry-rk ${rc}">${i + 1}</div>
+        <div class="sentry-info">
+          <div class="sentry-name">${p.ja}</div>
+          <div class="sentry-sub">${wins} wins · Week ${S.week || '—'}</div>
+        </div>
+        <div class="sentry-num" style="color:${p.color}">${wins}</div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${p.color}"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ================================================================
+   RENDER — Rank-by-week chart
+================================================================ */
+function renderChart() {
+  const svg = document.getElementById('rc');
+  const W = 340, H = 160;
+  const pad = { t: 14, r: 14, b: 30, l: 32 };
+  const cW  = W - pad.l - pad.r;
+  const cH  = H - pad.t - pad.b;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+
+  const rdata = weeklyRanks();
+  const n     = rdata.length;
+
+  if (n === 0) {
+    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle"
+      fill="rgba(255,255,255,.16)" font-size="11" font-family="sans-serif">
+      Awaiting Week 1 results</text>`;
+    return;
+  }
+
+  const xOf = i => pad.l + (n <= 1 ? cW / 2 : (i / (n - 1)) * cW);
+  const yOf = r => pad.t + ((r - 1) / (PLAYERS.length - 1)) * cH;
+
+  let s = '';
+
+  /* Grid lines & Y labels */
+  ['1st','2nd','3rd'].forEach((lbl, i) => {
+    const y = yOf(i + 1).toFixed(1);
+    s += `<line x1="${pad.l}" y1="${y}" x2="${W - pad.r}" y2="${y}"
+           stroke="rgba(255,255,255,.065)" stroke-width="1"/>`;
+    s += `<text x="${pad.l - 6}" y="${y}" text-anchor="end"
+           dominant-baseline="middle" fill="rgba(255,255,255,.22)"
+           font-size="9" font-family="sans-serif">${lbl}</text>`;
+  });
+
+  /* Axis base */
+  const axY = (pad.t + cH).toFixed(1);
+  s += `<line x1="${pad.l}" y1="${axY}" x2="${W - pad.r}" y2="${axY}"
+         stroke="rgba(255,255,255,.1)" stroke-width="1"/>`;
+
+  /* Week ticks + labels */
+  rdata.forEach((d, i) => {
+    const x = xOf(i).toFixed(1);
+    s += `<line x1="${x}" y1="${axY}" x2="${x}" y2="${(+axY + 4).toFixed(1)}"
+           stroke="rgba(255,255,255,.1)" stroke-width="1"/>`;
+    s += `<text x="${x}" y="${(H - pad.b + 14).toFixed(1)}"
+           text-anchor="middle" fill="rgba(255,255,255,.22)"
+           font-size="9" font-family="sans-serif">W${d.week}</text>`;
+  });
+
+  /* Player lines */
+  if (n >= 2) {
+    PLAYERS.forEach(p => {
+      const pts = rdata.map((d, i) =>
+        `${xOf(i).toFixed(1)},${yOf(d[p.id] || 1).toFixed(1)}`).join(' ');
+      s += `<polyline points="${pts}" fill="none"
+             stroke="${p.color}" stroke-width="2.5"
+             stroke-linejoin="round" stroke-linecap="round" opacity=".88"/>`;
+    });
+  }
+
+  /* Player dots */
+  PLAYERS.forEach(p => {
+    rdata.forEach((d, i) => {
+      s += `<circle cx="${xOf(i).toFixed(1)}" cy="${yOf(d[p.id] || 1).toFixed(1)}"
+               r="4" fill="${p.color}" opacity=".92">
+               <title>${p.name} · Week ${d.week}: Rank ${d[p.id]}</title>
+            </circle>`;
+    });
+  });
+
+  svg.innerHTML = s;
+}
+
+/* ================================================================
+   ORCHESTRATE
+================================================================ */
+async function doRefresh() {
+  const btn = document.getElementById('btn-ref');
+  const ovl = document.getElementById('overlay');
+  const err = document.getElementById('err-notice');
+
+  btn.disabled = true;
+  ovl.style.display = 'flex';
+  err.style.display = 'none';
+
+  try {
+    await loadAll();
+    ovl.style.display = 'none';
+    renderTeams();
+    renderStandings();
+    renderChart();
+    const total = Object.values(S.wins).reduce((a, b) => a + b, 0);
+    document.getElementById('tb-info').textContent =
+      `${total} completed game${total !== 1 ? 's' : ''} through Week ${S.week}`;
+  } catch (e) {
+    ovl.style.display = 'none';
+    err.style.display  = 'block';
+    err.textContent    = `Could not reach ESPN (${e.message}). Showing zero data — click Refresh to retry.`;
+    renderTeams();
+    renderStandings();
+    renderChart();
+    document.getElementById('tb-info').textContent = 'ESPN data unavailable';
+  }
+
+  btn.disabled = false;
+}
+
+doRefresh();
+</script>
+</body>
+</html>
